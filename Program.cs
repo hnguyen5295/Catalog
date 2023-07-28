@@ -1,11 +1,18 @@
 using Catalog.Repositories;
+using Catalog.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddSingleton<IItemsRepository, InMemItemsRepository>();
-builder.Services.AddControllers();
+builder.Services.Configure<MongoDbSettings>(
+    builder.Configuration.GetSection("CatalogDatabase"));
+
+builder.Services.AddSingleton<IItemsRepository, MongoDbItemsRepository>();
+builder.Services.AddControllers(options =>
+{
+  options.SuppressAsyncSuffixInActionNames = false;
+});
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -26,5 +33,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-// https://youtu.be/ZXdFisA_hOY 49:19
