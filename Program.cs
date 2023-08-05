@@ -1,5 +1,7 @@
 using System.Net.Mime;
 using System.Text.Json;
+using Catalog.Auth;
+using Catalog.Helpers;
 using Catalog.Repositories;
 using Catalog.Settings;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -12,8 +14,13 @@ var mongoDbSettings = builder.Configuration.GetSection("CatalogDatabase");
 var connectionString = mongoDbSettings.Get<MongoDbSettings>().ConnectionString;
 
 builder.Services.Configure<MongoDbSettings>(mongoDbSettings);
+builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
 
 builder.Services.AddSingleton<IItemsRepository, MongoDbItemsRepository>();
+builder.Services.AddSingleton<IJwtUtils, JwtUtils>();
+builder.Services.AddSingleton<IUsersRepository, UsersRepository>();
+
+builder.Services.AddCors();
 builder.Services.AddControllers(options =>
 {
   options.SuppressAsyncSuffixInActionNames = false;
@@ -35,7 +42,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
+app.UseCors(x => x
+        .AllowAnyOrigin()
+        .AllowAnyMethod()
+        .AllowAnyHeader());
+
+app.UseMiddleware<JwtMiddleware>();
 
 app.MapControllers();
 
@@ -69,3 +81,5 @@ app.MapHealthChecks("/health/live", new HealthCheckOptions
 });
 
 app.Run();
+
+// https://youtu.be/ZXdFisA_hOY 3:01:00
